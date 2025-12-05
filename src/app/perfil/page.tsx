@@ -23,7 +23,7 @@ const profileSchema = z.object({
   birth_date: z.string().refine((val) => !isNaN(Date.parse(val)), "Data inválida"),
   school: z.string().min(3, "Informe o nome da escola"),
   class_name: z.string().min(1, "Informe a turma (Ex: 3º A)"),
-  period: z.enum(["Manhã", "Tarde", "Noite"], { required_error: "Selecione o período" }),
+  period: z.enum(["Manhã", "Tarde", "Noite"]),
   about_me: z.string().max(500, "Máximo 500 caracteres").optional(),
   dreams: z.string().max(500, "Máximo 500 caracteres").optional(),
   skills: z.string().max(500, "Máximo 500 caracteres").optional(),
