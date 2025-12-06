@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { LogOut, User, FileCheck, AlertCircle } from "lucide-react";
-import { UploadForm } from "@/components/UploadForm"; 
+import { UploadForm } from "@/components/UploadForm";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function Dashboard() {
