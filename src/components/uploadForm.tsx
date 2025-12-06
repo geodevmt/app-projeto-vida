@@ -8,7 +8,7 @@ import { UploadCloud, FileText, X, Loader2, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 
-// Configurações
+// Configurações de Segurança
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_TYPES = [
   "application/pdf",
@@ -51,7 +51,7 @@ export function UploadForm({ onUploadSuccess, label = "Selecionar Arquivo" }: Up
     setProgress(10);
 
     try {
-      // 1. Sanitiza o nome (remove acentos e espaços)
+      // 1. Sanitiza o nome
       const cleanName = file.name
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
         .replace(/[^a-zA-Z0-9.-]/g, "_");
@@ -90,14 +90,13 @@ export function UploadForm({ onUploadSuccess, label = "Selecionar Arquivo" }: Up
       setProgress(100);
       toast.success("Arquivo enviado com sucesso!");
       setFile(null);
-      onUploadSuccess(); // Atualiza a tela do pai
+      onUploadSuccess(); 
 
-    } catch (error: unknown) { // <--- CORREÇÃO AQUI: Mudamos de 'any' para 'unknown'
+    } catch (error: unknown) { // <--- Tratamento de erro seguro
       console.error(error);
       
       let errorMessage = "Ocorreu um erro desconhecido no upload.";
 
-      // Verificação de tipo segura (Type Guard)
       if (error instanceof Error) {
         errorMessage = error.message;
       } else if (typeof error === "string") {
