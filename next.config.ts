@@ -3,7 +3,14 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true, // Identifica problemas no ciclo de vida dos componentes
   poweredByHeader: false, // Oculta "X-Powered-By: Next.js" (Segurança por obscuridade)
-
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co', // Domínio genérico do Supabase
+      },
+    ],
+  },
   async headers() {
     return [
       {
