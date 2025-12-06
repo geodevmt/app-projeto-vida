@@ -13,9 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-// Validação de senha forte
 const passwordSchema = z.object({
-  password: z.string().min(8, "Mínimo 8 caracteres"),
+  password: z.string().min(6, "Mínimo 6 caracteres"),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "As senhas não coincidem",
@@ -27,12 +26,10 @@ type PasswordForm = z.infer<typeof passwordSchema>;
 export default function UpdatePassword() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-
   const { register, handleSubmit, formState: { errors } } = useForm<PasswordForm>({
     resolver: zodResolver(passwordSchema),
   });
 
-  // Verifica se o usuário chegou aqui autenticado (pelo link do e-mail)
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
@@ -50,10 +47,8 @@ export default function UpdatePassword() {
       });
 
       if (error) throw error;
-
       toast.success("Senha alterada com sucesso!");
-      router.push("/dashboard"); // Manda direto pro painel
-      
+      router.push("/dashboard");
     } catch (error: any) {
       toast.error("Erro ao salvar senha: " + error.message);
     } finally {
@@ -73,16 +68,15 @@ export default function UpdatePassword() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            
             <div className="space-y-2">
               <Label htmlFor="password">Nova Senha</Label>
-              <Input id="password" type="password" {...register("password")} placeholder="******" />
+              <Input type="password" {...register("password")} placeholder="******" />
               {errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirmar Senha</Label>
-              <Input id="confirmPassword" type="password" {...register("confirmPassword")} placeholder="******" />
+              <Input type="password" {...register("confirmPassword")} placeholder="******" />
               {errors.confirmPassword && <p className="text-sm text-red-500">{errors.confirmPassword.message}</p>}
             </div>
 

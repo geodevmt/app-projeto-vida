@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "@/contexts/authContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { UploadCloud, FileText, X, Loader2, CheckCircle } from "lucide-react";
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 
 // Configurações
-const MAX_SIZE = 10 * 1024 * 1024; // Aumentei para 10MB para garantir
+const MAX_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_TYPES = [
   "application/pdf",
   "application/msword", // .doc
@@ -18,7 +18,7 @@ const ALLOWED_TYPES = [
 
 interface UploadFormProps {
   onUploadSuccess: () => void;
-  label?: string; // Ex: "Enviar Currículo"
+  label?: string; 
 }
 
 export function UploadForm({ onUploadSuccess, label = "Selecionar Arquivo" }: UploadFormProps) {
@@ -92,9 +92,21 @@ export function UploadForm({ onUploadSuccess, label = "Selecionar Arquivo" }: Up
       setFile(null);
       onUploadSuccess(); // Atualiza a tela do pai
 
-    } catch (error: any) {
+    } catch (error: unknown) { // <--- CORREÇÃO AQUI: Mudamos de 'any' para 'unknown'
       console.error(error);
-      toast.error("Erro no upload: " + error.message);
+      
+      let errorMessage = "Ocorreu um erro desconhecido no upload.";
+
+      // Verificação de tipo segura (Type Guard)
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === "string") {
+        errorMessage = error;
+      } else if (typeof error === "object" && error !== null && "message" in error) {
+        errorMessage = String((error as { message: unknown }).message);
+      }
+
+      toast.error("Erro: " + errorMessage);
     } finally {
       setIsUploading(false);
       setProgress(0);

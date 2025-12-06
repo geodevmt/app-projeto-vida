@@ -8,7 +8,7 @@ import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { Loader2, AlertCircle, Lock } from "lucide-react";
 import { toast } from "sonner";
-import Link from "next/link"; // <--- Importação necessária para o link funcionar
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,6 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-// Schema de validação
 const loginSchema = z.object({
   email: z.string().email("E-mail inválido"),
   password: z.string().min(6, "Mínimo 6 caracteres"),
@@ -48,7 +47,7 @@ export default function LoginPage() {
       }
       
       toast.success("Login realizado com sucesso!");
-      router.push("/dashboard"); // O middleware ou a página vai redirecionar se for admin
+      router.push("/dashboard"); 
 
     } catch (error: any) {
       console.error(error);
@@ -72,7 +71,6 @@ export default function LoginPage() {
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             
-            {/* Campo E-mail */}
             <div className="space-y-2">
               <Label htmlFor="email">E-mail Institucional</Label>
               <Input 
@@ -84,14 +82,12 @@ export default function LoginPage() {
               {errors.email && <p className="text-sm text-red-500">{errors.email.message}</p>}
             </div>
 
-            {/* Campo Senha com Link de Recuperação */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Senha</Label>
                 <Link 
                   href="/esqueci-senha" 
                   className="text-xs text-blue-600 hover:underline font-medium"
-                  tabIndex={-1} // Opcional: para não atrapalhar a tabulação rápida
                 >
                   Esqueceu a senha?
                 </Link>
@@ -104,7 +100,6 @@ export default function LoginPage() {
               {errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}
             </div>
 
-            {/* Alerta de Erro */}
             {errorMsg && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />

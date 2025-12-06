@@ -1,8 +1,10 @@
+import React from "react"; // <--- Adicionado para garantir tipagem
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from "@/contexts/authContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { Toaster } from "@/components/ui/sonner";
+import { CookieConsent } from "@/components/CookieConsent";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,7 +23,8 @@ export default function RootLayout({
       <body className={inter.className}>
         <AuthProvider>
           {children}
-          <Toaster /> {/* Notificações aparecem aqui */}
+          <Toaster />
+          <CookieConsent />
         </AuthProvider>
       </body>
     </html>

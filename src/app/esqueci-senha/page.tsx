@@ -29,17 +29,13 @@ export default function ForgotPassword() {
   const onSubmit = async (data: ForgotForm) => {
     setIsLoading(true);
     try {
-      // Pega a URL atual do navegador para saber para onde voltar
       const redirectTo = `${window.location.origin}/atualizar-senha`;
-
       const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
         redirectTo: redirectTo,
       });
 
       if (error) throw error;
-
       toast.success("Se o e-mail existir, você receberá um link de recuperação.");
-      
     } catch (error: any) {
       toast.error("Erro ao solicitar recuperação: " + error.message);
     } finally {

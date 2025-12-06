@@ -1,5 +1,4 @@
 "use client";
-
 import { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
@@ -21,7 +20,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    // 1. Checagem inicial
     const checkSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -33,17 +31,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       }
     };
-
     checkSession();
 
-    // 2. Monitoramento em Tempo Real
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoading(false);
-      
-      // REMOVIDO: O redirecionamento automático daqui.
-      // Deixaremos cada página protegida decidir se chuta o usuário ou não.
     });
 
     return () => subscription.unsubscribe();
@@ -63,8 +56,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth deve ser usado dentro de um AuthProvider");
-  }
+  if (context === undefined) throw new Error("useAuth deve ser usado dentro de um AuthProvider");
   return context;
 };

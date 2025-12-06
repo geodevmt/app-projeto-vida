@@ -26,7 +26,6 @@ export function InviteTeacherDialog() {
     setIsLoading(true);
 
     try {
-      // Chama a nossa API Route criada no Passo 2
       const response = await fetch('/api/invite', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -35,14 +34,21 @@ export function InviteTeacherDialog() {
 
       const data = await response.json();
 
-      if (!response.ok) throw new Error(data.error || "Erro ao enviar convite");
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao enviar convite");
+      }
 
       toast.success(`Convite enviado para ${email}!`);
       setIsOpen(false);
       setEmail("");
       setName("");
-    } catch (error: any) {
-      toast.error(error.message);
+      
+    } catch (error) {
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("Ocorreu um erro desconhecido.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -59,8 +65,7 @@ export function InviteTeacherDialog() {
         <DialogHeader>
           <DialogTitle>Convidar Docente</DialogTitle>
           <DialogDescription>
-            O professor receberá um e-mail com um link de acesso único. 
-            Ao clicar, ele poderá definir sua senha.
+            O professor receberá um link de acesso único por e-mail.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleInvite} className="grid gap-4 py-4">
@@ -68,7 +73,7 @@ export function InviteTeacherDialog() {
             <Label htmlFor="name">Nome do Professor</Label>
             <Input
               id="name"
-              placeholder="Ex: Prof. Carlos Silva"
+              placeholder="Ex: Carlos Silva"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
