@@ -1,4 +1,5 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
@@ -13,6 +14,21 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+
+// Reutilizamos a interface ProfileData (simplificada para o que é necessário aqui)
+interface ProfileData {
+  id: string;
+  full_name: string | null;
+  email?: string | null;
+  avatar_url: string | null;
+  school: string | null;
+  class_name: string | null;
+  period: string | null;
+  birth_date: string | null;
+  about_me: string | null;
+  dreams: string | null;
+  skills: string | null;
+}
 
 const profileSchema = z.object({
   full_name: z.string().min(3, "Nome muito curto"),
@@ -32,15 +48,30 @@ export default function ProfilePage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Usamos 'string | null' para o avatar URL
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm<ProfileForm>({ resolver: zodResolver(profileSchema) });
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm<ProfileForm>({
+    resolver: zodResolver(profileSchema),
+  });
 
+  // Carregar dados existentes
   useEffect(() => {
-    async function load() {
+    async function loadProfile() {
       if (!user) return;
-      const { data } = await supabase.from("profiles").select("*").eq("id", user.id).single();
-      if (data) {
+      
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      if (error) {
+        console.error(error);
+        toast.error("Erro ao carregar perfil");
+      } else if (data) {
+        // Mapeamento dos dados para o formulário
         setValue("full_name", data.full_name || "");
         setValue("birth_date", data.birth_date || "");
         setValue("school", data.school || "");
@@ -53,16 +84,28 @@ export default function ProfilePage() {
       }
       setIsLoading(false);
     }
-    load();
+    loadProfile();
   }, [user, setValue]);
 
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files?.[0] || !user) return;
-    const file = e.target.files[0];
+  // Função de Upload de Avatar
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files || !event.target.files[0] || !user) return;
+    
+    const file = event.target.files[0];
     const path = `${user.id}/avatar.${file.name.split('.').pop()}`;
-    toast.info("Enviando foto...");
-    await supabase.storage.from('avatars').upload(path, file, { upsert: true });
+
+    toast.info("Atualizando foto...");
+
+    const { error: uploadError } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
+
+    if (uploadError) {
+      toast.error("Erro ao enviar foto: " + uploadError.message);
+      return;
+    }
+
     const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path);
+    
+    // Atualiza no banco e no estado local
     await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', user.id);
     setAvatarUrl(publicUrl);
     toast.success("Foto atualizada!");
@@ -71,37 +114,86 @@ export default function ProfilePage() {
   const onSubmit = async (data: ProfileForm) => {
     if (!user) return;
     setIsSaving(true);
-    const { error } = await supabase.from("profiles").update({ ...data, last_updated_at: new Date().toISOString() }).eq("id", user.id);
-    setIsSaving(false);
-    if (error) toast.error("Erro ao salvar");
-    else { toast.success("Salvo!"); router.push("/dashboard"); }
+
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          ...data,
+          last_updated_at: new Date().toISOString(),
+        })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      toast.success("Perfil salvo com sucesso!");
+      router.push("/dashboard"); 
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao salvar perfil.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  if (isLoading) return <div>Carregando...</div>;
+  if (isLoading) return <div className="flex h-screen items-center justify-center">Carregando...</div>;
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="mx-auto max-w-2xl">
-        <Button variant="ghost" onClick={() => router.push("/dashboard")} className="mb-4"><ArrowLeft className="mr-2 h-4 w-4" /> Voltar</Button>
+        <Button variant="ghost" onClick={() => router.push("/dashboard")} className="mb-4">
+          <ArrowLeft className="mr-2 h-4 w-4" /> Voltar ao Painel
+        </Button>
+
         <Card>
-          <CardHeader><CardTitle>Meu Perfil</CardTitle><CardDescription>Mantenha atualizado.</CardDescription></CardHeader>
+          <CardHeader>
+            <CardTitle>Meu Perfil</CardTitle>
+            <CardDescription>Mantenha seus dados atualizados para o professor.</CardDescription>
+          </CardHeader>
           <CardContent>
+            
             <div className="mb-6 flex flex-col items-center gap-4">
-              <div className="h-24 w-24 rounded-full border bg-gray-100 overflow-hidden">{avatarUrl ? <img src={avatarUrl} className="object-cover h-full w-full" /> : <Camera className="h-8 w-8 m-auto mt-8 text-gray-400" />}</div>
-              <label className="text-sm text-blue-600 cursor-pointer hover:underline">Alterar foto<input type="file" hidden accept="image/*" onChange={handleAvatarUpload} /></label>
+              <div className="relative h-24 w-24 overflow-hidden rounded-full border-2 border-gray-200 bg-gray-100">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full items-center justify-center text-gray-400">
+                    <Camera className="h-8 w-8" />
+                  </div>
+                )}
+              </div>
+              <Label htmlFor="avatar-upload" className="cursor-pointer text-sm text-blue-600 hover:underline">
+                {avatarUrl ? "Alterar foto" : "Adicionar foto"}
+              </Label>
+              <input 
+                id="avatar-upload" 
+                type="file" 
+                accept="image/*" 
+                className="hidden" 
+                onChange={handleAvatarUpload}
+              />
             </div>
+
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              
               <div className="grid gap-4 md:grid-cols-2">
-                <div><Label>Nome</Label><Input {...register("full_name")} /></div>
-                <div><Label>Nascimento</Label><Input type="date" {...register("birth_date")} /></div>
+                <div className="space-y-2"><Label>Nome Completo</Label><Input {...register("full_name")} />{errors.full_name && <p className="text-sm text-red-500">{errors.full_name.message}</p>}</div>
+                <div className="space-y-2"><Label>Data de Nascimento</Label><Input type="date" {...register("birth_date")} />{errors.birth_date && <p className="text-sm text-red-500">{errors.birth_date.message}</p>}</div>
               </div>
-              <div><Label>Escola</Label><Input {...register("school")} /></div>
+
+              <div className="space-y-2"><Label>Escola</Label><Input placeholder="Nome da Escola Estadual..." {...register("school")} />{errors.school && <p className="text-sm text-red-500">{errors.school.message}</p>}</div>
+
               <div className="grid gap-4 md:grid-cols-2">
-                <div><Label>Turma</Label><Input {...register("class_name")} /></div>
-                <div><Label>Período</Label><select {...register("period")} className="flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm"><option value="Manhã">Manhã</option><option value="Tarde">Tarde</option><option value="Noite">Noite</option></select></div>
+                <div className="space-y-2"><Label>Turma</Label><Input placeholder="Ex: 3º Ano B" {...register("class_name")} />{errors.class_name && <p className="text-sm text-red-500">{errors.class_name.message}</p>}</div>
+                <div className="space-y-2"><Label>Período</Label><select {...register("period")} className="flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm">
+                    <option value="Manhã">Manhã</option><option value="Tarde">Tarde</option><option value="Noite">Noite</option></select>{errors.period && <p className="text-sm text-red-500">{errors.period.message}</p>}</div>
               </div>
-              <div><Label>Sobre Mim</Label><Textarea {...register("about_me")} /></div>
-              <Button className="w-full" disabled={isSaving}>{isSaving ? <Loader2 className="animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Salvar</Button>
+
+              <div className="space-y-2"><Label>Sobre Mim (500 chars)</Label><Textarea placeholder="Conte um pouco sobre sua história..." {...register("about_me")} /></div>
+              <div className="space-y-2"><Label>Meus Sonhos</Label><Textarea placeholder="O que você quer ser no futuro?" {...register("dreams")} /></div>
+              <div className="space-y-2"><Label>Habilidades</Label><Textarea placeholder="Ex: Desenho, Matemática, Esportes..." {...register("skills")} /></div>
+
+              <Button type="submit" className="w-full" disabled={isSaving}>{isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Salvar Perfil</Button>
             </form>
           </CardContent>
         </Card>
